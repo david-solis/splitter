@@ -36,9 +36,9 @@ contract Splitter is Pausable {
         uint balance = balances[msg.sender];
         require(balance > 0);
 
-        emit LogWithdrawn(msg.sender, balance);
         balances[msg.sender] = 0;
         msg.sender.transfer(balance);
+        emit LogWithdrawn(msg.sender, balance);
     }
 
     function() external payable {
