@@ -20,11 +20,11 @@ contract Splitter is Pausable {
     }
 
     function split(address first, address second) public payable whenNotPaused fromOwner {
-        require(msg.value > 0);
         require(first != second);
         require(first != address(0) && second != address(0));
 
         uint half = msg.value.div(2);
+        // Implies msg.value > 0
         require(half > 0);
 
         balances[first] = balances[first].add(half);
@@ -37,8 +37,8 @@ contract Splitter is Pausable {
         require(balance > 0);
 
         balances[msg.sender] = 0;
-        msg.sender.transfer(balance);
         emit LogWithdrawn(msg.sender, balance);
+        msg.sender.transfer(balance);
     }
 
     function() external payable {

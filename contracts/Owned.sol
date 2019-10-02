@@ -12,7 +12,7 @@ contract Owned {
 
     constructor() public {
         currentOwner = msg.sender;
-        emit LogOwnerSet(msg.sender, msg.sender);
+        emit LogOwnerSet(address(0), msg.sender);
     }
 
     modifier fromOwner() {

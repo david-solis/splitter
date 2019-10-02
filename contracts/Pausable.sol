@@ -13,7 +13,6 @@ contract Pausable is Owned {
     event LogPausedSet(address indexed sender, bool indexed newPausedState);
 
     constructor() public {
-        paused = false;
     }
 
     /**
@@ -34,12 +33,12 @@ contract Pausable is Owned {
     }
 
      modifier whenPaused() {
-         require(paused == true);
+         require(paused);
          _;
      }
 
      modifier whenNotPaused() {
-         require(paused == false);
+         require(!paused);
          _;
      }
 
