@@ -5,7 +5,7 @@ const {getBalance} = web3.eth;
 const Splitter = artifacts.require("Splitter");
 
 contract('Splitter', accounts => {
-    const [owner, first, second, unauthorised] = accounts;
+    const [owner, first, second, other] = accounts;
     const zeroAddress = "0x0000000000000000000000000000000000000000";
     let splitter;
     const maxGas = 15000000;
@@ -36,7 +36,7 @@ contract('Splitter', accounts => {
 
     describe("access", function () {
         it("should  be possible to split when sender is not the owner", async function () {
-            const txObj = await splitter.split(first, second, {from: unauthorised, value: 100, gas: maxGas});
+            const txObj = await splitter.split(first, second, {from: other, value: 100, gas: maxGas});
             assert.isTrue(txObj.receipt.status, "receipt status must be true");
         });
     });
