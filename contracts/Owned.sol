@@ -32,10 +32,12 @@ contract Owned {
      *     The new owner.
      */
     function setOwner(address newOwner) public fromOwner returns (bool success) {
-        require(newOwner != address(0) && newOwner != currentOwner);
-        emit LogOwnerSet(currentOwner, newOwner);
-        currentOwner = newOwner;
-        return true;
+        require(newOwner != address(0));
+        if (newOwner != currentOwner) {
+            emit LogOwnerSet(currentOwner, newOwner);
+            currentOwner = newOwner;
+        }
+        success = true;
     }
 
     /**

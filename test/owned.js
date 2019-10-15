@@ -1,40 +1,42 @@
-const expectedExceptionPromise = require("./utils/expectedException.js");
+const Owned = artifacts.require("Owned");
 
-const Splitter = artifacts.require("Splitter");
-
-contract('Splitter', accounts => {
-    const [owner, first, second, newOwner, unauthorised] = accounts;
-    let splitter;
-    const maxGas = 15000000;
+contract('Owned', accounts => {
+    const [owner, newOwner] = accounts;
+    let owned;
 
     const getEventResult = (txObj, eventName) => {
         const event = txObj.logs.find(log => log.event === eventName);
 
         if (event) {
             return event.args;
-        } else {
+        }
+        else {
             return undefined;
         }
     };
 
-    beforeEach("deploy new Splitter", function () {
-        return Splitter.new({from: owner})
-            .then(instance => splitter = instance);
+    beforeEach("deploy new Owned", async () => {
+        owned = await Owned.new({from: owner});
     });
 
     describe("owner", function () {
+        it("Initial owner", async () => {
+            const currentOwner = await owned.getOwner();
+            assert.equal(currentOwner, owner);
+        });
+
         it("Change owner", async () => {
-            const txObj = await splitter.setOwner(newOwner, {from: owner});
+            const txObj = await owned.setOwner(newOwner, {from: owner});
             assert.isTrue(txObj.receipt.status, "status must be true");
+            // We expect one event
+            assert.strictEqual(txObj.receipt.logs.length, 1);
+            assert.strictEqual(txObj.logs.length, 1);
+            // Check contract
+            assert.equal(await owned.getOwner(), newOwner);
+            // Check event
             const event = getEventResult(txObj, "LogOwnerSet");
             assert.equal(event.previousOwner, owner, "New owner must be changed");
             assert.equal(event.newOwner, newOwner, "New owner must be set");
-        });
-
-        it("should not be possible to split when sender is not the owner", async function () {
-            await expectedExceptionPromise(
-                () => splitter.split(first, second, {from: unauthorised, value: 100, gas: maxGas}),
-                maxGas);
         });
     });
 });

@@ -12,7 +12,8 @@ contract Pausable is Owned {
      */
     event LogPausedSet(address indexed sender, bool indexed newPausedState);
 
-    constructor() public {
+    constructor(bool flag) public {
+        paused = flag;
     }
 
     /**
@@ -28,7 +29,7 @@ contract Pausable is Owned {
     function setPaused(bool newState) public fromOwner returns(bool success){
         require(newState != paused);
         paused = newState;
-        emit LogPausedSet(msg.sender, paused);
+        emit LogPausedSet(msg.sender, newState);
         return true;
     }
 
@@ -45,7 +46,7 @@ contract Pausable is Owned {
     /**
      * @return Whether the contract is indeed paused.
      */
-    function isPaused() public view  returns(bool isIndeed) {
+    function isPaused() public view returns(bool isIndeed) {
         return paused;
     }
 }

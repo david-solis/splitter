@@ -1,9 +1,11 @@
 const expectedExceptionPromise = require("./utils/expectedException.js");
+const {toBN, toWei, asciiToHex} = web3.utils;
+const {getBalance} = web3.eth;
 
 const Splitter = artifacts.require("Splitter");
 
 contract('Splitter', accounts => {
-    const [owner, first, second] = accounts;
+    const [owner, first, second, unauthorised] = accounts;
     const zeroAddress = "0x0000000000000000000000000000000000000000";
     let splitter;
     const maxGas = 15000000;
@@ -19,9 +21,8 @@ contract('Splitter', accounts => {
         }
     };
 
-    beforeEach("deploy new Splitter", function() {
-        return Splitter.new({ from: owner })
-            .then(instance => splitter = instance);
+    beforeEach("deploy new Splitter", async () => {
+        splitter = await Splitter.new({from: owner});
     });
 
     describe("deploy", function () {
@@ -33,43 +34,38 @@ contract('Splitter', accounts => {
         });
     });
 
-    describe("pause", function () {
-        it("should allow pause and unpause of contract", async () => {
-            var txObj = await splitter.setPaused(true, {from: owner});
-            assert.isTrue(txObj.receipt.status, "receiptstatus must be true");
-
-            var event = getEventResult(txObj, "LogPausedSet");
-            assert.equal(event.sender, owner, "function must have been execute by owner");
-            assert.equal(event.newPausedState, true, "contract must be paused");
-
-            txObj = await splitter.setPaused(false, {from: owner});
+    describe("access", function () {
+        it("should  be possible to split when sender is not the owner", async function () {
+            const txObj = await splitter.split(first, second, {from: unauthorised, value: 100, gas: maxGas});
             assert.isTrue(txObj.receipt.status, "receipt status must be true");
-
-            event = getEventResult(txObj, "LogPausedSet");
-            assert.equal(event.sender, owner, "function must have been execute by owner");
-            assert.equal(event.newPausedState, false, "failed to unpause");
         });
+    });
 
+    describe("control", function () {
         it("should not be possible to split when contract is paussed", async function () {
             await splitter.setPaused(true, {from: owner});
             await expectedExceptionPromise(
-                () => splitter.split(first, second, {from: owner, value: 100}),
+                () => splitter.split(first, second, {from: owner, value: 100, gas: maxGas}),
                 maxGas);
         });
     });
 
     describe("split", function () {
         it("should split ether between 2 addresses", async () => {
-            const ether = 99;
-            const txObj = await splitter.split(first, second, {from: owner, value: ether});
-
+            const txObj = await splitter.split(first, second, {from: owner, value: 99, gas: maxGas});
             assert.isTrue(txObj.receipt.status, "receipt status must be true");
+
             const acc1 = await splitter.balances.call(first);
             const acc2 = await splitter.balances.call(second);
-
-            const half = 49;
-            assert.equal(acc1.toString(), half, "failed to split ether equaly");
-            assert.equal(acc2.toString(), ether - half, "failed to split ether equaly");
+            // Check contract storage
+            assert.equal(acc1.toString(), 49, "failed to split ether equaly");
+            assert.equal(acc2.toString(), 50, "failed to split ether equaly");
+            // Check event
+            event = getEventResult(txObj, "LogSplit");
+            assert.strictEqual(event.sender, owner, "sender mismatch");
+            assert.strictEqual(event.first, first, "first mismatch");
+            assert.strictEqual(event.second, second, "second mismatch");
+            assert.equal(event.amount, 99, "amount mismatch");
         });
 
         it("should reject direct transaction with value", async function () {
@@ -96,6 +92,12 @@ contract('Splitter', accounts => {
                 maxGas);
         });
 
+        it("should reject if first equals to second", async function () {
+            await expectedExceptionPromise(
+                () => splitter.split(first, first, {from: owner, value: 1000, gas: maxGas}),
+                maxGas);
+        });
+
         it("should reject without first", async function () {
             await expectedExceptionPromise(
                 () => splitter.split(zeroAddress, second, {from: owner, value: 1000, gas: maxGas}),
@@ -111,8 +113,8 @@ contract('Splitter', accounts => {
 
     describe("withdraw", function() {
 
-        beforeEach("split 4001 first", async() => {
-            await splitter.split(first, second, { from: owner, value: 4001 });
+        beforeEach("split 4001", async() => {
+            await splitter.split(first, second, { from: owner, value: 4001, gas: maxGas });
         });
 
         it("should reject withdraw by owner", async function() {
@@ -138,9 +140,24 @@ contract('Splitter', accounts => {
         });
 
         it("should reduce splitter balance by withdrawn amount", async function() {
-            await splitter.withdraw({ from: first })
-                .then(txObject => web3.eth.getBalance(splitter.address))
-                .then(balance => assert.strictEqual(balance.toString(10), "2001"));
+            await splitter.withdraw({ from: first });
+            // Check contract balance
+            const balance = await getBalance(splitter.address);
+            assert.strictEqual(balance.toString(10), "2001", "contract balance mismatch");
+            // Check contract storage
+            const acc1 = await splitter.balances.call(first);
+            assert.equal(acc1.toString(), 0, "should be zero");
+        });
+
+        it("should affect first balance", async function() {
+            const previousBalance = toBN(await getBalance(first));
+            const txObject = await splitter.withdraw({ from: first });
+            // Check first's balance
+            const transaction = await web3.eth.getTransaction(txObject.tx);
+            const gasPrice = toBN(txObject.receipt.gasUsed).mul(toBN(transaction.gasPrice));
+            const finalBalance = toBN(await getBalance(first));
+            // finalBalance = previousBalance + 2000 - gasPrice
+            assert.isTrue(previousBalance.sub(gasPrice).add(toBN(2000)).eq(finalBalance), "first balance mismatch");
         });
 
         it("should reject first withdrawing twice", async function() {

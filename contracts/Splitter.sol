@@ -16,10 +16,10 @@ contract Splitter is Pausable {
      */
     event LogWithdrawn(address indexed sender, uint balance);
 
-    constructor() public {
+    constructor() Pausable(false) public {
     }
 
-    function split(address first, address second) public payable whenNotPaused fromOwner {
+    function split(address first, address second) public payable whenNotPaused {
         require(first != second);
         require(first != address(0) && second != address(0));
 
