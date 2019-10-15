@@ -23,7 +23,6 @@ contract Owned {
     /**
      * Sets the new owner for this contract.
      *     It should roll back if the caller is not the current owner.
-     *     It should roll back if the argument is the current owner.
      *     It should roll back if the argument is a 0 address.
      * @param newOwner The new owner of the contract
      * @return Whether the action was successful.
