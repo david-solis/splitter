@@ -1,3 +1,4 @@
+const expectedExceptionPromise = require("./utils/expectedException.js");
 const Owned = artifacts.require("Owned");
 
 contract('Owned', accounts => {
@@ -21,8 +22,12 @@ contract('Owned', accounts => {
 
     describe("owner", function () {
         it("Initial owner", async () => {
-            const currentOwner = await owned.getOwner();
-            assert.equal(currentOwner, owner);
+            assert.strictEqual(await owned.getOwner(), owner);
+        });
+
+        it("should not be possible to change owner if not owner", async function () {
+            await expectedExceptionPromise(
+                () => owned.setOwner(newOwner, {from: newOwner}));
         });
 
         it("Change owner", async () => {

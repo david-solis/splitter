@@ -12,8 +12,8 @@ contract Pausable is Owned {
      */
     event LogPausedSet(address indexed sender, bool indexed newPausedState);
 
-    constructor(bool flag) public {
-        paused = flag;
+    constructor(bool initialPaused) public {
+        paused = initialPaused;
     }
 
     /**

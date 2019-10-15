@@ -16,7 +16,7 @@ contract Splitter is Pausable {
      */
     event LogWithdrawn(address indexed sender, uint balance);
 
-    constructor() Pausable(false) public {
+    constructor(bool initialPaused) Pausable(initialPaused) public {
     }
 
     function split(address first, address second) public payable whenNotPaused {

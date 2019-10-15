@@ -22,7 +22,7 @@ contract('Splitter', accounts => {
     };
 
     beforeEach("deploy new Splitter", async () => {
-        splitter = await Splitter.new({from: owner});
+        splitter = await Splitter.new(false, {from: owner});
     });
 
     describe("deploy", function () {
@@ -58,8 +58,8 @@ contract('Splitter', accounts => {
             const acc1 = await splitter.balances.call(first);
             const acc2 = await splitter.balances.call(second);
             // Check contract storage
-            assert.equal(acc1.toString(), 49, "failed to split ether equaly");
-            assert.equal(acc2.toString(), 50, "failed to split ether equaly");
+            assert.strictEqual(acc1.toString(), "49", "failed to split ether equaly");
+            assert.strictEqual(acc2.toString(), "50", "failed to split ether equaly");
             // Check event
             event = getEventResult(txObj, "LogSplit");
             assert.strictEqual(event.sender, owner, "sender mismatch");
@@ -146,7 +146,7 @@ contract('Splitter', accounts => {
             assert.strictEqual(balance.toString(10), "2001", "contract balance mismatch");
             // Check contract storage
             const acc1 = await splitter.balances.call(first);
-            assert.equal(acc1.toString(), 0, "should be zero");
+            assert.strictEqual(acc1.toString(), "0", "should be zero");
         });
 
         it("should affect first balance", async function() {
@@ -157,7 +157,8 @@ contract('Splitter', accounts => {
             const gasPrice = toBN(txObject.receipt.gasUsed).mul(toBN(transaction.gasPrice));
             const finalBalance = toBN(await getBalance(first));
             // finalBalance = previousBalance + 2000 - gasPrice
-            assert.isTrue(previousBalance.sub(gasPrice).add(toBN(2000)).eq(finalBalance), "first balance mismatch");
+            assert.strictEqual(previousBalance.sub(gasPrice).add(toBN(2000)).toString(10), finalBalance.toString(10),
+                "first balance mismatch");
         });
 
         it("should reject first withdrawing twice", async function() {

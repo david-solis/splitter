@@ -35,8 +35,9 @@ contract Owned {
         if (newOwner != msg.sender) {
             emit LogOwnerSet(msg.sender, newOwner);
             currentOwner = newOwner;
+            return true;
         }
-        success = true;
+        return false;
     }
 
     /**
